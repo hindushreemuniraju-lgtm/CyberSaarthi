@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: cybersaarthi
+    env: python
+    buildCommand: "cd frontend && npm install && npm run build && cd .. && pip install -r backend/requirements.txt"
+    startCommand: "python backend/run.py"
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: FLASK_ENV
+        value: production

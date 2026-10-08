@@ -1,0 +1,123 @@
+{
+  "brand": {
+    "name": "CyberSaarthi",
+    "tagline": "A safer digital world for everyone.",
+    "context": "VTU Community Cyber Safety Companion"
+  },
+  "nav": {
+    "home": "Home",
+    "check": "Check Link & Message",
+    "history": "Scan History",
+    "stories": "Safety Stories",
+    "rewards": "My Badges",
+    "people": "People I Help",
+    "alerts": "Alerts",
+    "tips": "Safety Tips",
+    "settings": "Settings",
+    "logout": "Sign Out",
+    "login": "Sign In",
+    "register": "Create Account"
+  },
+  "modes": {
+    "kid": "Kids",
+    "adult": "Adult",
+    "senior": "Senior",
+    "caretaker": "Care Taker",
+    "kid_desc": "Learn online safety through fun stories, badges, and games.",
+    "adult_desc": "Inspect suspicious links, SMS, and financial phishing with in-depth signals.",
+    "senior_desc": "Simple, large-button, voice-assisted protection in your native language.",
+    "caretaker_desc": "Safeguard family elders and children with privacy-first alerts."
+  },
+  "welcome": {
+    "title": "Welcome to CyberSaarthi",
+    "subtitle": "Your digital safety companion.",
+    "question": "How would you like CyberSaarthi to help you?",
+    "choose_lang": "Select Your Preferred Language",
+    "start_button": "Get Started",
+    "quick_demo": "Explore Demo Persona"
+  },
+  "scan": {
+    "input_label": "Paste suspicious link, SMS, or WhatsApp message:",
+    "placeholder": "e.g. http://sbi-kyc-update.xyz or 'Your account will be blocked today...'",
+    "check_button": "Check Now",
+    "speak_button": "Speak",
+    "paste_button": "Paste",
+    "analyzing": "CyberSaarthi is analyzing...",
+    "step_structure": "Analyzing URL structure & protocol",
+    "step_patterns": "Evaluating social-engineering signals",
+    "step_intel": "Consulting threat intelligence",
+    "step_verdict": "Formulating safety recommendations",
+    "safe_title": "Looks Low-Risk",
+    "warn_title": "Suspicious Content",
+    "block_title": "High Risk — Do Not Open",
+    "risk_score": "Risk Score",
+    "why_label": "Why CyberSaarthi flagged this",
+    "recommendation_label": "Recommended Action",
+    "technical_details": "Technical Signals",
+    "external_intel": "Threat Intelligence Status",
+    "read_aloud": "Read Aloud",
+    "stop_reading": "Stop Audio",
+    "ask_caretaker": "Ask Caretaker",
+    "ask_adult": "Ask Trusted Adult",
+    "go_back": "Go Back Safely",
+    "no_history": "No scans recorded yet."
+  },
+  "kids": {
+    "mascot_name": "Chotu Saarthi",
+    "mascot_welcome": "Hi there! I am your cyber safety buddy! Let's explore together!",
+    "stop_warning": "Let's stop for a moment. This link might not be safe! Ask your trusted adult before opening it.",
+    "stories_title": "Cyber Safety Adventures",
+    "quiz_title": "Safety Champion Quiz",
+    "badges_title": "Your Safety Badges",
+    "ask_adult_button": "Ask My Trusted Adult",
+    "play_story": "Play Adventure",
+    "score_label": "Stars Earned"
+  },
+  "senior": {
+    "greeting": "Hello",
+    "question": "What would you like me to do?",
+    "btn_check_link": "Check a Link",
+    "btn_check_message": "Tell Me About This Message",
+    "btn_ask_caretaker": "Ask My Caretaker",
+    "btn_call_trusted": "Call Someone I Trust",
+    "btn_safety_tips": "Learn Safety Tips",
+    "stop_banner": "STOP — Do Not Open This",
+    "stop_explanation": "Someone may be trying to take your money or information.",
+    "font_size_label": "Text Size",
+    "voice_first_label": "Voice Guidance"
+  },
+  "caretaker": {
+    "title": "Caretaker Safety Center",
+    "subtitle": "Protecting family members with consent-driven alerts.",
+    "people_helped": "People I Help",
+    "add_person": "Connect New Person",
+    "active_alerts": "Active Alerts",
+    "no_alerts": "No unread alerts. Everyone is currently safe!",
+    "pending_requests": "Pending Relationships",
+    "alert_scope_label": "Alert Sensitivity",
+    "alert_block_only": "Block Level Only (Critical)",
+    "alert_block_warn": "Block & Warn (Recommended)",
+    "alert_all": "All Activity",
+    "mark_resolved": "Mark Resolved",
+    "call_ward": "Contact Ward"
+  },
+  "voice": {
+    "listening": "Listening... Please speak your message or link clearly.",
+    "unsupported": "Speech recognition is not supported in this browser. Please type your message.",
+    "error": "Sorry, I couldn't understand that. Please try again or type it.",
+    "permission_denied": "Microphone permission was denied. Please allow microphone access."
+  },
+  "common": {
+    "safe": "Low Risk",
+    "warn": "Suspicious",
+    "block": "High Risk",
+    "close": "Close",
+    "save": "Save Preferences",
+    "cancel": "Cancel",
+    "copied": "Copied to clipboard!",
+    "emergency_contacts": "Trusted Emergency Contacts",
+    "phone": "Phone",
+    "name": "Name",
+    "relation": "Relationship"
+  }
+}
