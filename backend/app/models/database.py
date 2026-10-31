@@ -10,8 +10,14 @@ Base = declarative_base()
 
 def get_engine():
     db_url = Config.DATABASE_URL
+    is_sqlite = db_url.startswith("sqlite")
+    connect_args = {"check_same_thread": False} if is_sqlite else {}
     try:
-        engine = create_engine(db_url, pool_pre_ping=True)
+        engine = create_engine(
+            db_url,
+            pool_pre_ping=not is_sqlite,
+            connect_args=connect_args
+        )
         # Test connection
         with engine.connect() as conn:
             pass
@@ -20,7 +26,10 @@ def get_engine():
     except Exception as e:
         logger.warning(f"Failed to connect to primary DB ({db_url}): {e}. Falling back to SQLite for zero-downtime development.")
         # Fallback to local SQLite db
-        sqlite_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'cybersaarthi.db')
+        if os.getenv('VERCEL') or os.getenv('AWS_LAMBDA_FUNCTION_NAME'):
+            sqlite_path = '/tmp/cybersaarthi.db'
+        else:
+            sqlite_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'cybersaarthi.db')
         fallback_url = f"sqlite:///{sqlite_path}"
         engine = create_engine(fallback_url, connect_args={"check_same_thread": False})
         return engine

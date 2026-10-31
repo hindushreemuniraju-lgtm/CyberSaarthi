@@ -15,7 +15,13 @@ class Config:
     PORT = int(os.getenv('PORT', 5000))
 
     # Database
-    DATABASE_URL = os.getenv('DATABASE_URL', 'sqlite:///cybersaarthi.db')
+    db_env = os.getenv('DATABASE_URL')
+    if db_env:
+        DATABASE_URL = db_env
+    elif os.getenv('VERCEL') or os.getenv('AWS_LAMBDA_FUNCTION_NAME'):
+        DATABASE_URL = 'sqlite:////tmp/cybersaarthi.db'
+    else:
+        DATABASE_URL = 'sqlite:///cybersaarthi.db'
 
     # Security Engine Centralized Risk Thresholds (Project Blueprint)
     # 0 - 29: SAFE

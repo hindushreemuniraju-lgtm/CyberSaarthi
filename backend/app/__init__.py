@@ -154,6 +154,7 @@ def create_app():
     app.register_blueprint(tips_bp, url_prefix='/api/safety-tips')
     app.register_blueprint(voice_bp, url_prefix='/api/voice')
 
+    @app.route('/health', methods=['GET'])
     @app.route('/api/health', methods=['GET'])
     def health_check():
         return jsonify({
