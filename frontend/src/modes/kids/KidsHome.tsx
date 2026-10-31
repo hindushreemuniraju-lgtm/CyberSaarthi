@@ -5,6 +5,8 @@ import { api } from '../../services/api';
 import { ScanResult } from '../../types';
 import { ResultCard } from '../../components/ResultCard';
 import { KidsStoryCard, KidStory } from './KidsStoryCard';
+import { KidsMascot } from './KidsMascot';
+import { KidsMiniGame } from './KidsMiniGame';
 import { VoiceAssistant } from '../../components/VoiceAssistant';
 import {
   Sparkles,
@@ -14,9 +16,9 @@ import {
   Star,
   Users,
   Compass,
-  Smile,
-  Gift,
-  Key
+  Gamepad2,
+  CheckCircle,
+  HeartHandshake
 } from 'lucide-react';
 
 const STORIES_DATA: KidStory[] = [
@@ -94,9 +96,10 @@ export const KidsHome: React.FC<{
   const [inputContent, setInputContent] = useState('');
   const [scanning, setScanning] = useState(false);
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
-  const [stars, setStars] = useState(3);
+  const [stars, setStars] = useState(4);
   const [badges, setBadges] = useState(['Badge of Caution', 'Password Shield']);
-  const [activeTab, setActiveTab] = useState<'scan' | 'stories' | 'badges'>('scan');
+  const [activeTab, setActiveTab] = useState<'scan' | 'game' | 'stories' | 'badges'>('scan');
+  const [askedCaretakerSuccess, setAskedCaretakerSuccess] = useState(false);
 
   const handleScan = async (contentToScan?: string) => {
     const text = contentToScan || inputContent;
@@ -112,7 +115,7 @@ export const KidsHome: React.FC<{
         setStars(prev => prev + 1);
       }
     } catch (err) {
-      alert("Something went wrong while checking the link. Please ask an adult.");
+      alert("Something went wrong while checking the link. Please ask your caretaker.");
     } finally {
       setScanning(false);
     }
@@ -125,77 +128,105 @@ export const KidsHome: React.FC<{
     }
   };
 
+  const handleTriggerAskCaretaker = () => {
+    setAskedCaretakerSuccess(true);
+    setTimeout(() => setAskedCaretakerSuccess(false), 4000);
+    onOpenCaretakerModal();
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-amber-50 via-sky-50 to-emerald-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto space-y-8">
         
-        {/* Mascot Welcome Header */}
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border-4 border-amber-300 shadow-xl flex flex-col sm:flex-row items-center gap-6">
-          <div className="w-28 h-28 rounded-full bg-gradient-to-tr from-amber-400 to-yellow-300 flex items-center justify-center text-6xl shadow-md animate-float flex-shrink-0">
-            🤖
+        {/* Animated Illustrated Mascot Header */}
+        <KidsMascot
+          mood={scanResult ? (scanResult.risk_level === 'BLOCK' ? 'alert' : scanResult.risk_level === 'SAFE' ? 'celebrating' : 'thinking') : 'happy'}
+          message={
+            scanResult
+              ? scanResult.headline
+              : "Hi there! I am Chotu Saarthi, your cyber safety buddy! Let's explore together!"
+          }
+          subMessage={
+            scanResult
+              ? scanResult.explanation
+              : "Check strange links, solve fun adventures, and win safety badges!"
+          }
+        />
+
+        {/* Floating Quick Action: Ask My Caretaker */}
+        <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-2xl border-2 border-sky-200 shadow-sm">
+          <div className="flex items-center gap-3">
+            <HeartHandshake className="w-6 h-6 text-purple-600" />
+            <div>
+              <span className="font-black text-slate-800 text-sm block">Got a confusing message or link?</span>
+              <span className="text-xs font-semibold text-slate-500">Your connected caretaker is ready to help guide you.</span>
+            </div>
           </div>
 
-          <div className="flex-1 text-center sm:text-left">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-900 text-xs font-black uppercase mb-2">
-              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-              <span>{t('kids.mascot_name')} • Safety Companion</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900">
-              {t('kids.mascot_welcome')}
-            </h1>
-            <p className="text-slate-600 text-sm mt-1 font-medium">
-              Check strange links, earn stars, and solve safety adventures!
-            </p>
-          </div>
-
-          {/* Kid Rewards Pill */}
-          <div className="flex flex-row sm:flex-col gap-2 items-center bg-amber-50 p-3.5 rounded-2xl border-2 border-amber-200">
-            <div className="flex items-center gap-1 text-amber-900 font-black text-lg">
-              <Star className="w-6 h-6 fill-amber-400 text-amber-500" />
-              <span>{stars} Stars</span>
-            </div>
-            <div className="text-[11px] font-bold text-amber-800">
-              {badges.length} Badges Won
-            </div>
-          </div>
+          <button
+            onClick={handleTriggerAskCaretaker}
+            className="px-5 py-2.5 rounded-xl font-black text-xs bg-purple-600 hover:bg-purple-700 text-white shadow-md active:scale-95 transition-all flex items-center gap-2"
+          >
+            <Users className="w-4 h-4" />
+            <span>Ask My Caretaker</span>
+          </button>
         </div>
 
-        {/* Fun Mode Tabs */}
-        <div className="flex justify-center gap-2">
+        {askedCaretakerSuccess && (
+          <div className="p-4 bg-emerald-50 border-2 border-emerald-400 text-emerald-950 rounded-2xl text-xs font-bold flex items-center gap-2 animate-fade-in">
+            <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+            <span>Help request sent to your trusted caretaker! They have been alerted.</span>
+          </div>
+        )}
+
+        {/* Fun Navigation Tabs */}
+        <div className="flex flex-wrap justify-center gap-2">
           <button
             onClick={() => setActiveTab('scan')}
-            className={`px-5 py-2.5 rounded-2xl font-black text-sm flex items-center gap-2 transition-all ${
+            className={`px-5 py-2.5 rounded-2xl font-black text-xs sm:text-sm flex items-center gap-2 transition-all ${
               activeTab === 'scan'
                 ? 'bg-blue-600 text-white shadow-md scale-105'
                 : 'bg-white text-slate-700 border-2 border-slate-200 hover:bg-slate-50'
             }`}
           >
             <Search className="w-4 h-4" />
-            <span>Check a Link / Message</span>
+            <span>Check a Link</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('game')}
+            className={`px-5 py-2.5 rounded-2xl font-black text-xs sm:text-sm flex items-center gap-2 transition-all ${
+              activeTab === 'game'
+                ? 'bg-sky-600 text-white shadow-md scale-105'
+                : 'bg-white text-slate-700 border-2 border-slate-200 hover:bg-slate-50'
+            }`}
+          >
+            <Gamepad2 className="w-4 h-4" />
+            <span>Spot the Scam Game</span>
           </button>
 
           <button
             onClick={() => setActiveTab('stories')}
-            className={`px-5 py-2.5 rounded-2xl font-black text-sm flex items-center gap-2 transition-all ${
+            className={`px-5 py-2.5 rounded-2xl font-black text-xs sm:text-sm flex items-center gap-2 transition-all ${
               activeTab === 'stories'
                 ? 'bg-amber-500 text-white shadow-md scale-105'
                 : 'bg-white text-slate-700 border-2 border-slate-200 hover:bg-slate-50'
             }`}
           >
             <Compass className="w-4 h-4" />
-            <span>Safety Adventures</span>
+            <span>Safety Stories</span>
           </button>
 
           <button
             onClick={() => setActiveTab('badges')}
-            className={`px-5 py-2.5 rounded-2xl font-black text-sm flex items-center gap-2 transition-all ${
+            className={`px-5 py-2.5 rounded-2xl font-black text-xs sm:text-sm flex items-center gap-2 transition-all ${
               activeTab === 'badges'
                 ? 'bg-purple-600 text-white shadow-md scale-105'
                 : 'bg-white text-slate-700 border-2 border-slate-200 hover:bg-slate-50'
             }`}
           >
             <Award className="w-4 h-4" />
-            <span>My Badges</span>
+            <span>Badges ({badges.length})</span>
           </button>
         </div>
 
@@ -209,13 +240,6 @@ export const KidsHome: React.FC<{
                     <Search className="w-6 h-6 text-blue-600" />
                     <span>Did someone send you a weird link?</span>
                   </h2>
-                  <button
-                    onClick={onOpenCaretakerModal}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 text-blue-700 text-xs font-bold hover:bg-blue-100"
-                  >
-                    <Users className="w-4 h-4" />
-                    <span>{t('kids.ask_adult_button')}</span>
-                  </button>
                 </div>
 
                 <p className="text-slate-600 text-sm font-medium">
@@ -241,7 +265,7 @@ export const KidsHome: React.FC<{
                   <button
                     onClick={() => handleScan()}
                     disabled={scanning || !inputContent.trim()}
-                    className="flex-1 sm:flex-initial px-8 py-3.5 rounded-2xl font-black text-base bg-blue-600 hover:bg-blue-700 text-white shadow-lg disabled:opacity-50 transition-all flex items-center justify-center gap-2"
+                    className="flex-1 sm:flex-initial px-8 py-3.5 rounded-2xl font-black text-base bg-blue-600 hover:bg-blue-700 text-white shadow-lg disabled:opacity-50 transition-all flex items-center justify-center gap-2 active:scale-95"
                   >
                     {scanning ? (
                       <span>Checking with Saarthi...</span>
@@ -290,13 +314,25 @@ export const KidsHome: React.FC<{
                   setScanResult(null);
                   setInputContent('');
                 }}
-                onAskCaretaker={onOpenCaretakerModal}
+                onAskCaretaker={handleTriggerAskCaretaker}
               />
             )}
           </div>
         )}
 
-        {/* TAB 2: STORIES & ADVENTURES */}
+        {/* TAB 2: SPOT THE SCAM MINI-GAME */}
+        {activeTab === 'game' && (
+          <KidsMiniGame
+            onScoreIncrease={(pts) => {
+              setStars(prev => prev + pts);
+              if (stars + pts >= 8 && !badges.includes('Cyber Hero')) {
+                setBadges(prev => [...prev, 'Cyber Hero']);
+              }
+            }}
+          />
+        )}
+
+        {/* TAB 3: STORIES & ADVENTURES */}
         {activeTab === 'stories' && (
           <div className="space-y-6">
             <div className="text-center">
@@ -320,7 +356,7 @@ export const KidsHome: React.FC<{
           </div>
         )}
 
-        {/* TAB 3: BADGES */}
+        {/* TAB 4: BADGES & REWARDS */}
         {activeTab === 'badges' && (
           <div className="bg-white rounded-3xl p-6 sm:p-8 border-4 border-purple-200 shadow-xl space-y-6">
             <div className="text-center">
@@ -329,7 +365,7 @@ export const KidsHome: React.FC<{
                 {t('kids.badges_title')}
               </h2>
               <p className="text-slate-600 text-sm mt-1">
-                Collect all 5 safety badges by completing stories and checking suspicious links!
+                You have collected <strong>{stars} Stars</strong>! Earn more by playing the Spot the Scam game and checking links.
               </p>
             </div>
 
@@ -338,7 +374,7 @@ export const KidsHome: React.FC<{
                 { name: 'Badge of Caution', icon: '🛡️', unlocked: badges.includes('Badge of Caution') },
                 { name: 'Password Defender', icon: '🔑', unlocked: badges.includes('Password Shield') },
                 { name: 'Story Master', icon: '📖', unlocked: badges.includes('Story Master') },
-                { name: 'Cyber Hero', icon: '⭐', unlocked: stars >= 5 }
+                { name: 'Cyber Hero', icon: '⭐', unlocked: stars >= 6 }
               ].map((b, idx) => (
                 <div
                   key={idx}

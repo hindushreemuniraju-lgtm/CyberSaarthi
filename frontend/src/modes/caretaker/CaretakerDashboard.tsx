@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../context/AuthContext';
 import { api } from '../../services/api';
-import { WardPerson, AlertItem } from '../../types';
+import { WardPerson, AlertItem, TrustedContact } from '../../types';
 import {
   Users,
   ShieldAlert,
@@ -16,7 +16,12 @@ import {
   ExternalLink,
   ChevronRight,
   ShieldCheck,
-  CheckCheck
+  CheckCheck,
+  Ban,
+  Lock,
+  PhoneCall,
+  Sliders,
+  ShieldOff
 } from 'lucide-react';
 
 export const CaretakerDashboard: React.FC = () => {
@@ -25,8 +30,9 @@ export const CaretakerDashboard: React.FC = () => {
 
   const [people, setPeople] = useState<WardPerson[]>([]);
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
+  const [contacts, setContacts] = useState<TrustedContact[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'people' | 'alerts'>('people');
+  const [activeTab, setActiveTab] = useState<'people' | 'alerts' | 'consent' | 'contacts'>('people');
   
   // Add person form state
   const [showAddModal, setShowAddModal] = useState(false);
@@ -46,12 +52,14 @@ export const CaretakerDashboard: React.FC = () => {
   const loadDashboardData = async () => {
     setLoading(true);
     try {
-      const [peopleRes, alertsRes] = await Promise.all([
+      const [peopleRes, alertsRes, contactsRes] = await Promise.all([
         api.getSupportedPeople(),
-        api.getAlerts()
+        api.getAlerts(),
+        api.getContacts()
       ]);
       setPeople(peopleRes.people || []);
       setAlerts(alertsRes.alerts || []);
+      setContacts(contactsRes.contacts || []);
     } catch (err) {
       console.error("Failed to load caretaker data", err);
     } finally {
@@ -68,7 +76,7 @@ export const CaretakerDashboard: React.FC = () => {
       const res = await api.requestRelationship({
         identifier: addIdentifier,
         alert_scope: addScope,
-        notes: "Caretaker protection request"
+        notes: "Caretaker family protection request"
       });
       setAddStatusMsg({ text: res.message });
       setAddIdentifier('');
@@ -84,6 +92,29 @@ export const CaretakerDashboard: React.FC = () => {
       setAlerts(alerts.map(a => a.id === alertId ? { ...a, status: 'RESOLVED' } : a));
     } catch (err) {
       alert("Failed to resolve alert");
+    }
+  };
+
+  const handleRevokeRelationship = async (relId: string) => {
+    if (!confirm("Are you sure you want to revoke this monitoring authorization? The ward's activity will no longer be visible.")) return;
+    try {
+      await api.revokeRelationship(relId);
+      loadDashboardData();
+    } catch (err) {
+      alert("Failed to revoke relationship");
+    }
+  };
+
+  const handleUpdateAlertScope = async (relId: string, newScope: string) => {
+    try {
+      await api.updateConsent({
+        relationship_id: relId,
+        status: 'ACTIVE',
+        alert_scope: newScope
+      });
+      loadDashboardData();
+    } catch (err) {
+      alert("Failed to update alert sensitivity");
     }
   };
 
@@ -103,7 +134,7 @@ export const CaretakerDashboard: React.FC = () => {
   const unreadAlerts = alerts.filter(a => a.status === 'UNREAD');
 
   return (
-    <div className="min-h-screen bg-slate-50/70 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto space-y-8">
         
         {/* Caretaker Header */}
@@ -114,59 +145,97 @@ export const CaretakerDashboard: React.FC = () => {
               <span>{t('caretaker.title')}</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
-              Family & Ward Protection Hub
+              Family & Ward Protection Command Center
             </h1>
             <p className="text-blue-200 text-sm mt-1 max-w-xl">
-              {t('caretaker.subtitle')}
+              Protect elderly parents and children with privacy-first mutual consent and actionable scam alerts.
             </p>
           </div>
 
           <button
             onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-blue-500 hover:bg-blue-400 text-white font-bold text-sm shadow-md transition-all active:scale-95"
+            className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-blue-500 hover:bg-blue-400 text-white font-bold text-sm shadow-md transition-all active:scale-95 flex-shrink-0"
           >
             <UserPlus className="w-4 h-4" />
-            <span>{t('caretaker.add_person')}</span>
+            <span>Connect Family Member</span>
           </button>
         </div>
 
         {/* Dashboard Tabs & Overview Counters */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <button
             onClick={() => setActiveTab('people')}
-            className={`p-6 rounded-2xl border text-left transition-all shadow-sm ${
+            className={`p-4 rounded-2xl border text-left transition-all shadow-sm ${
               activeTab === 'people'
                 ? 'bg-white border-blue-600 ring-2 ring-blue-100'
-                : 'bg-white/70 border-slate-200 hover:bg-white'
+                : 'bg-white/80 border-slate-200 hover:bg-white'
             }`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                {t('caretaker.people_helped')}
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                Wards ({people.length})
               </span>
-              <Users className="w-5 h-5 text-blue-600" />
+              <Users className="w-4 h-4 text-blue-600" />
             </div>
-            <div className="text-3xl font-black text-slate-900 mt-2">
-              {people.length} Active Wards
+            <div className="text-2xl font-black text-slate-900 mt-1">
+              {people.length} Active
             </div>
           </button>
 
           <button
             onClick={() => setActiveTab('alerts')}
-            className={`p-6 rounded-2xl border text-left transition-all shadow-sm ${
+            className={`p-4 rounded-2xl border text-left transition-all shadow-sm ${
               activeTab === 'alerts'
                 ? 'bg-white border-rose-600 ring-2 ring-rose-100'
-                : 'bg-white/70 border-slate-200 hover:bg-white'
+                : 'bg-white/80 border-slate-200 hover:bg-white'
             }`}
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
-                {t('caretaker.active_alerts')}
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                Alerts ({unreadAlerts.length})
               </span>
-              <Bell className="w-5 h-5 text-rose-600" />
+              <Bell className="w-4 h-4 text-rose-600" />
             </div>
-            <div className="text-3xl font-black text-rose-600 mt-2">
-              {unreadAlerts.length} Unresolved Alerts
+            <div className="text-2xl font-black text-rose-600 mt-1">
+              {unreadAlerts.length} Unresolved
+            </div>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('consent')}
+            className={`p-4 rounded-2xl border text-left transition-all shadow-sm ${
+              activeTab === 'consent'
+                ? 'bg-white border-purple-600 ring-2 ring-purple-100'
+                : 'bg-white/80 border-slate-200 hover:bg-white'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                Consent
+              </span>
+              <Sliders className="w-4 h-4 text-purple-600" />
+            </div>
+            <div className="text-2xl font-black text-slate-900 mt-1">
+              Permissions
+            </div>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('contacts')}
+            className={`p-4 rounded-2xl border text-left transition-all shadow-sm ${
+              activeTab === 'contacts'
+                ? 'bg-white border-emerald-600 ring-2 ring-emerald-100'
+                : 'bg-white/80 border-slate-200 hover:bg-white'
+            }`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                Emergency
+              </span>
+              <PhoneCall className="w-4 h-4 text-emerald-600" />
+            </div>
+            <div className="text-2xl font-black text-slate-900 mt-1">
+              1930 / Contacts
             </div>
           </button>
         </div>
@@ -182,8 +251,8 @@ export const CaretakerDashboard: React.FC = () => {
             {people.length === 0 && !loading && (
               <div className="bg-white rounded-2xl p-8 border text-center text-slate-500">
                 <Users className="w-12 h-12 mx-auto text-slate-300 mb-2" />
-                <p className="font-semibold">No members linked yet.</p>
-                <p className="text-xs text-slate-400 mt-1">Click "Connect New Person" above to send an invitation.</p>
+                <p className="font-semibold">No family members linked yet.</p>
+                <p className="text-xs text-slate-400 mt-1">Click "Connect Family Member" above to invite them.</p>
               </div>
             )}
 
@@ -213,20 +282,20 @@ export const CaretakerDashboard: React.FC = () => {
                     </span>
                   </div>
 
-                  <div className="p-3 bg-slate-50 rounded-xl text-xs space-y-1">
+                  <div className="p-3 bg-slate-50 rounded-xl text-xs space-y-1.5 border border-slate-100">
                     <div className="flex justify-between text-slate-600">
-                      <span>Alert Scope:</span>
+                      <span>Alert Threshold:</span>
                       <span className="font-semibold text-slate-900">{p.alert_scope}</span>
                     </div>
                     <div className="flex justify-between text-slate-600">
                       <span>Recent Activity:</span>
                       <span className="font-semibold text-slate-900">
-                        {p.last_activity ? new Date(p.last_activity).toLocaleDateString() : 'None'}
+                        {p.last_activity ? new Date(p.last_activity).toLocaleDateString() : 'No recent scans'}
                       </span>
                     </div>
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 pt-1">
                     <button
                       onClick={() => handleViewWardScans(p)}
                       className="flex-1 px-3 py-2 text-xs font-bold bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl transition-all"
@@ -236,7 +305,7 @@ export const CaretakerDashboard: React.FC = () => {
                     {p.ward_phone && (
                       <a
                         href={`tel:${p.ward_phone}`}
-                        className="px-3 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl flex items-center gap-1.5"
+                        className="px-4 py-2 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl flex items-center gap-1.5 shadow-sm"
                       >
                         <Phone className="w-3.5 h-3.5" />
                         <span>Call</span>
@@ -305,7 +374,7 @@ export const CaretakerDashboard: React.FC = () => {
                     {alt.status !== 'RESOLVED' ? (
                       <button
                         onClick={() => handleResolveAlert(alt.id)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-sm transition-all"
+                        className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-sm transition-all active:scale-95"
                       >
                         <CheckCheck className="w-3.5 h-3.5" />
                         <span>{t('caretaker.mark_resolved')}</span>
@@ -317,6 +386,113 @@ export const CaretakerDashboard: React.FC = () => {
                       </span>
                     )}
                   </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: CONSENT & AUTHORIZATION */}
+        {activeTab === 'consent' && (
+          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <div>
+                <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
+                  <Lock className="w-5 h-5 text-purple-600" />
+                  <span>Privacy & Relationship Consent Matrix</span>
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Explicit authorization controls. You only receive activity permitted by the ward.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              {people.map((p) => (
+                <div key={p.relationship_id} className="p-4 rounded-xl border border-slate-200 bg-slate-50/70 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <span className="font-bold text-slate-900 text-sm">{p.ward_name}</span>
+                      <span className="text-xs text-slate-500 ml-2">({p.ward_email || p.ward_phone})</span>
+                    </div>
+
+                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                      p.status === 'ACTIVE' ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
+                    }`}>
+                      Status: {p.status}
+                    </span>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pt-2 border-t border-slate-200/60">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-slate-700">Alert Sensitivity:</span>
+                      <select
+                        value={p.alert_scope}
+                        onChange={(e) => handleUpdateAlertScope(p.relationship_id, e.target.value)}
+                        className="text-xs font-medium px-2 py-1 rounded-lg border bg-white"
+                      >
+                        <option value="BLOCK_ONLY">Block Only (High Risk Phishing)</option>
+                        <option value="BLOCK_AND_WARN">Block & Warn (Suspicious Links)</option>
+                        <option value="ALL_ACTIVITY">All Activity (Full Audit)</option>
+                      </select>
+                    </div>
+
+                    <button
+                      onClick={() => handleRevokeRelationship(p.relationship_id)}
+                      className="text-xs font-bold text-rose-600 hover:text-rose-800 flex items-center gap-1"
+                    >
+                      <ShieldOff className="w-3.5 h-3.5" />
+                      <span>Revoke Monitoring</span>
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 4: TRUSTED CONTACTS */}
+        {activeTab === 'contacts' && (
+          <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-6">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
+              <div>
+                <h3 className="font-bold text-base text-slate-900 flex items-center gap-2">
+                  <PhoneCall className="w-5 h-5 text-emerald-600" />
+                  <span>Trusted Contacts & Emergency Helplines</span>
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Helplines and verified family contacts available to wards during emergencies.
+                </p>
+              </div>
+            </div>
+
+            {/* National 1930 Helpline Banner */}
+            <div className="p-4 bg-amber-50 border-2 border-amber-300 rounded-2xl flex items-center justify-between">
+              <div>
+                <div className="font-bold text-amber-950 text-sm">National Cyber Crime Helpline (India)</div>
+                <p className="text-xs text-amber-800 mt-0.5">Dial 1930 immediately for financial fraud / unauthorized UPI debits.</p>
+              </div>
+              <a
+                href="tel:1930"
+                className="px-4 py-2 rounded-xl bg-amber-500 text-white font-black text-sm shadow hover:bg-amber-600"
+              >
+                Call 1930
+              </a>
+            </div>
+
+            <div className="divide-y divide-slate-100">
+              {contacts.map((c) => (
+                <div key={c.id} className="py-3 flex items-center justify-between">
+                  <div>
+                    <h4 className="font-bold text-slate-900 text-sm">{c.name}</h4>
+                    <p className="text-xs text-slate-500">{c.relationship} • {c.phone}</p>
+                  </div>
+                  <a
+                    href={`tel:${c.phone}`}
+                    className="px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                  >
+                    Call
+                  </a>
                 </div>
               ))}
             </div>
@@ -395,12 +571,17 @@ export const CaretakerDashboard: React.FC = () => {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
             <div className="w-full max-w-2xl bg-white rounded-3xl p-6 shadow-2xl border border-slate-200 max-h-[85vh] flex flex-col">
               <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-                <h3 className="text-base font-bold text-slate-900">
-                  Permitted Activity: {selectedWard.ward_name}
-                </h3>
+                <div>
+                  <h3 className="text-base font-bold text-slate-900">
+                    Permitted Activity: {selectedWard.ward_name}
+                  </h3>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    Filtered by consented scope: <strong>{selectedWard.alert_scope}</strong>
+                  </p>
+                </div>
                 <button
                   onClick={() => setSelectedWard(null)}
-                  className="p-1 rounded-lg hover:bg-slate-100 text-slate-500"
+                  className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500 text-sm font-bold"
                 >
                   ✕
                 </button>
@@ -408,7 +589,9 @@ export const CaretakerDashboard: React.FC = () => {
 
               <div className="flex-1 overflow-y-auto py-4 space-y-3">
                 {wardScans.length === 0 && !loadingWardScans && (
-                  <p className="text-xs text-slate-400 text-center py-6">No permitted scans in this scope.</p>
+                  <p className="text-xs text-slate-400 text-center py-6">
+                    No permitted scans in this scope.
+                  </p>
                 )}
 
                 {wardScans.map((s) => (
