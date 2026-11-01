@@ -13,6 +13,8 @@ scan_bp = Blueprint('scan', __name__)
 engine = DecisionEngine()
 
 @scan_bp.route('', methods=['POST'])
+@scan_bp.route('/', methods=['POST'])
+@scan_bp.route('/analyze', methods=['POST'])
 @optional_token
 def perform_scan(current_user=None):
     data = request.get_json() or {}

@@ -1,4 +1,5 @@
 import os
+import shutil
 import logging
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker, scoped_session
@@ -24,9 +25,14 @@ def get_engine():
         logger.info(f"Connected successfully to primary database: {db_url.split('@')[-1] if '@' in db_url else db_url}")
         return engine
     except Exception as e:
-        logger.warning(f"Failed to connect to primary DB ({db_url}): {e}. Falling back to SQLite for zero-downtime development.")
-        # Fallback to local SQLite db
-        if os.getenv('VERCEL') or os.getenv('AWS_LAMBDA_FUNCTION_NAME'):
+        logger.warning(f"Failed to connect to primary DB ({db_url}): {e}. Falling back to SQLite.")
+        is_serverless = bool(
+            os.getenv('VERCEL') or
+            os.getenv('VERCEL_ENV') or
+            os.getenv('AWS_LAMBDA_FUNCTION_NAME') or
+            os.getenv('LAMBDA_TASK_ROOT')
+        )
+        if is_serverless:
             sqlite_path = '/tmp/cybersaarthi.db'
         else:
             sqlite_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'cybersaarthi.db')

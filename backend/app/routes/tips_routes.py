@@ -68,6 +68,7 @@ DEFAULT_TIPS = [
 ]
 
 @tips_bp.route('', methods=['GET'])
+@tips_bp.route('/', methods=['GET'])
 def get_tips():
     lang = request.args.get('lang', 'en').lower()
     target_mode = request.args.get('mode', 'all').lower()

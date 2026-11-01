@@ -1,5 +1,6 @@
 import os
 import sys
+import urllib.parse
 
 # Ensure root directory is in sys.path so backend module can be imported
 root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -17,32 +18,20 @@ class VercelPathFixer:
         self.wsgi_app = wsgi_app
 
     def __call__(self, environ, start_response):
-        path_info = environ.get('PATH_INFO', '')
-        forwarded_uri = environ.get('HTTP_X_FORWARDED_URI') or environ.get('HTTP_X_MATCHED_PATH')
-        
-        if forwarded_uri and path_info in ('/api/index.py', '/api/index', '/api'):
-            environ['PATH_INFO'] = forwarded_uri.split('?')[0]
-            
+        query_string = environ.get('QUERY_STRING', '')
+        if '__path__=' in query_string:
+            params = query_string.split('&')
+            clean_params = []
+            for param in params:
+                if param.startswith('__path__='):
+                    real_path = param.split('__path__=', 1)[1]
+                    environ['PATH_INFO'] = urllib.parse.unquote(real_path)
+                else:
+                    clean_params.append(param)
+            environ['QUERY_STRING'] = '&'.join(clean_params)
         return self.wsgi_app(environ, start_response)
 
 flask_app.wsgi_app = VercelPathFixer(flask_app.wsgi_app)
-
-@flask_app.route('/api/index.py', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
-@flask_app.route('/api/index', methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
-def vercel_entry_fallback():
-    forwarded_uri = request.headers.get('x-forwarded-uri') or request.headers.get('x-matched-path')
-    if forwarded_uri and forwarded_uri not in ('/api/index.py', '/api/index'):
-        with flask_app.test_client() as client:
-            resp = client.open(forwarded_uri, method=request.method, data=request.get_data(), headers=dict(request.headers))
-            return (resp.get_data(), resp.status_code, resp.headers.items())
-            
-    return jsonify({
-        'status': 'healthy',
-        'project': 'CyberSaarthi',
-        'tagline': 'A safer digital world for everyone.',
-        'version': '1.0.0',
-        'runtime': 'Vercel Serverless'
-    }), 200
 
 app = flask_app
 
