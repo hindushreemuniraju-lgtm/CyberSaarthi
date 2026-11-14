@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { useUserExperience } from '../context/UserExperienceContext';
 import { useAuth } from '../context/AuthContext';
 import { LanguageSelector } from './LanguageSelector';
@@ -12,8 +13,7 @@ import {
   LogOut,
   User as UserIcon,
   PhoneCall,
-  Bell,
-  BookOpen
+  LogIn
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -26,11 +26,17 @@ export const Navbar: React.FC<NavbarProps> = ({
   onOpenCaretakerModal
 }) => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { mode } = useUserExperience();
   const { user, logout } = useAuth();
 
   const isSenior = mode === 'senior';
   const isKid = mode === 'kid';
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
 
   return (
     <header className={`sticky top-0 z-40 transition-all border-b ${
@@ -44,7 +50,10 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="flex items-center justify-between h-20">
           
           {/* Logo & Brand Identity */}
-          <div className="flex items-center gap-3">
+          <div
+            onClick={() => navigate(`/${mode}`)}
+            className="flex items-center gap-3 cursor-pointer"
+          >
             <div className={`flex items-center justify-center rounded-2xl shadow-sm ${
               isKid
                 ? 'w-12 h-12 bg-amber-400 text-amber-950 animate-float'
@@ -71,7 +80,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   {t('brand.name')}
                 </span>
                 <span className="hidden sm:inline-block text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-                  VTU Societal Project
+                  RDBMS Auth 2.0
                 </span>
               </div>
               <p className={`hidden md:block text-slate-500 font-medium ${
@@ -107,22 +116,37 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
             )}
 
-            {/* User Session Info & Logout */}
+            {/* User Session Info & Logout / Login */}
             {user ? (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5 pl-2 border-l border-slate-200">
                 <div className="hidden md:flex flex-col text-right">
-                  <span className="text-xs font-bold text-slate-800">{user.name}</span>
-                  <span className="text-[10px] text-slate-500 capitalize">{user.user_mode}</span>
+                  <span className="text-xs font-bold text-slate-900 truncate max-w-[130px]">
+                    {user.full_name || user.name}
+                  </span>
+                  <div className="flex items-center justify-end gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    <span className="text-[10px] font-bold text-slate-500 uppercase">
+                      {user.role || user.user_mode}
+                    </span>
+                  </div>
                 </div>
                 <button
-                  onClick={logout}
-                  title={t('nav.logout')}
-                  className="p-2 text-slate-400 hover:text-rose-600 hover:bg-slate-100 rounded-xl"
+                  onClick={handleLogout}
+                  title="Sign Out"
+                  className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors border border-transparent hover:border-rose-200"
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
               </div>
-            ) : null}
+            ) : (
+              <button
+                onClick={() => navigate('/login')}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-sm transition-all"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>Sign In</span>
+              </button>
+            )}
           </div>
         </div>
 

@@ -71,6 +71,18 @@ PATTERNS = {
         ],
         "reason": "Promises guaranteed daily income for trivial online tasks, standard precursor to advance-fee deposit fraud."
     },
+    "PIRACY_MALWARE_STREAMING": {
+        "title": "Pirated Streaming Mirror / Trojan APK Vector",
+        "severity": 75,
+        "keywords": [
+            r'\bnetmirror(\.(app|io|club|org|to|co))?\b',
+            r'\b(fmovies|123movies|movierulz|tamilrockers|filmywap|ibomma|soap2day|lookmovie)\b',
+            r'\b(mod\s*apk|hacked\s*apk|unlimited\s*(coins|gems|money)\s*apk)\b',
+            r'\b(free\s*netflix|free\s*prime\s*video|netflix\s*mirror|free\s*hotstar)\b',
+            r'\b(download\s*cracked|crack\s*software|keygen|warez|torrent\s*download)\b'
+        ],
+        "reason": "Refers to unauthorized streaming mirrors or modified APK download sites (like Netmirror). These platforms are known to distribute trojans, malicious ad scripts, and spyware."
+    },
     "URGENCY_PRESSURE": {
         "title": "High Urgency Coercion",
         "severity": 25,

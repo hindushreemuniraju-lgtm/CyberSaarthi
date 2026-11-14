@@ -3,7 +3,7 @@ import { User, ScanResult, TrustedContact, WardPerson, AlertItem, SafetyTipItem 
 const API_BASE = '/api';
 
 function getHeaders(): HeadersInit {
-  const token = localStorage.getItem('cybersaarthi_token');
+  const token = localStorage.getItem('cybersaarthi_token') || sessionStorage.getItem('cybersaarthi_token');
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   };
@@ -25,32 +25,68 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(data.error || data.message || `Request failed with status ${response.status}`);
+    const errorMsg = data.error || data.message || `Request failed with status ${response.status}`;
+    const err = new Error(errorMsg) as Error & { details?: string[]; status?: number };
+    err.details = data.details;
+    err.status = response.status;
+    throw err;
   }
 
   return data as T;
 }
 
 export const api = {
-  // Auth
-  register: (payload: any) => request<{ token: string; user: User }>('/auth/register', {
+  // Authentication & RBAC
+  register: (payload: {
+    full_name: string;
+    email: string;
+    username?: string;
+    password: string;
+    confirm_password?: string;
+    role: string;
+    preferred_language?: string;
+    phone?: string;
+    font_scale?: string;
+    voice_enabled?: boolean;
+  }) => request<{ token: string; user: User; redirect_url: string; message: string }>('/auth/register', {
     method: 'POST',
     body: JSON.stringify(payload)
   }),
 
-  login: (payload: { identifier: string; password: string }) => request<{ token: string; user: User }>('/auth/login', {
-    method: 'POST',
-    body: JSON.stringify(payload)
-  }),
+  login: (payload: { identifier: string; password: string; remember_me?: boolean }) =>
+    request<{ token: string; user: User; role: string; redirect_url: string; message: string }>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    }),
+
+  logout: () => request<{ message: string }>('/auth/logout', { method: 'POST' }).catch(() => ({ message: 'Logged out' })),
 
   getMe: () => request<{ user: User }>('/auth/me'),
+
+  forgotPassword: (identifier: string) => request<{ message: string; reset_token?: string; expires_in_minutes?: number }>('/auth/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ identifier })
+  }),
+
+  resetPassword: (payload: { token: string; new_password: string; confirm_password?: string }) =>
+    request<{ message: string }>('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    }),
+
+  verifyRole: (target_role: string) => request<{ allowed: boolean; user_role: string; target_role: string }>('/auth/verify-role', {
+    method: 'POST',
+    body: JSON.stringify({ target_role })
+  }),
+
+  getLoginHistory: () => request<{ history: any[] }>('/auth/history'),
 
   updatePreferences: (payload: Partial<User> & Record<string, any>) => request<{ user: User }>('/auth/me/preferences', {
     method: 'PUT',
     body: JSON.stringify(payload)
   }),
 
-  // Scan
+  // Scan & Detection
   performScan: (content: string, user_mode?: string, language?: string) => request<ScanResult>('/scan', {
     method: 'POST',
     body: JSON.stringify({ content, user_mode, language })
@@ -60,7 +96,7 @@ export const api = {
 
   getScanById: (id: string) => request<{ scan: any }>(`/scan/${id}`),
 
-  // Caretaker
+  // Caretaker & Supported Wards
   getSupportedPeople: () => request<{ people: WardPerson[] }>('/caretaker/people'),
 
   getMyCaretakers: () => request<{ caretakers: any[] }>('/caretaker/my-caretakers'),

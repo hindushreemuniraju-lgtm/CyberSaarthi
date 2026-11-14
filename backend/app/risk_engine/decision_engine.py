@@ -261,7 +261,84 @@ class DecisionEngine:
         signals = aggregate["signals"]
 
         # 4. Generate mode-specific & language-specific explanations
-        mode_expl = EXPLANATIONS[risk_level][mode][lang]
+        is_piracy_malware = any(
+            s.get("code") in ["MALICIOUS_STREAMING_PIRACY", "PIRACY_MALWARE_STREAMING"]
+            for s in signals
+        )
+        if is_piracy_malware and risk_level == "BLOCK":
+            piracy_expl = {
+                "kid": {
+                    "en": {
+                        "headline": "🛑 Stay away! Dangerous movie/game site",
+                        "explanation": "This site (like Netmirror) is not safe. It often carries viruses and bad apps that can break your device or steal family accounts.",
+                        "action": "Do not download anything or click links here. Tell your parents or caretaker."
+                    },
+                    "kn": {
+                        "headline": "🛑 ದೂರವಿರಿ! ಅಪಾಯಕಾರಿ ಸಿನಿಮಾ/ಗೇಮ್ ಸೈಟ್",
+                        "explanation": "ಈ ಸೈಟ್ (ನೆಟ್‌ಮಿರರ್ ನಂತಹ) ಸುರಕ್ಷಿತವಾಗಿಲ್ಲ. ಇದು ನಿಮ್ಮ ಸಾಧನಕ್ಕೆ ಹಾನಿ ಮಾಡುವ ವೈರಸ್‌ಗಳನ್ನು ಹೊಂದಿರಬಹುದು.",
+                        "action": "ಯಾವುದನ್ನೂ ಡೌನ್‌ಲೋಡ್ ಮಾಡಬೇಡಿ. ತಕ್ಷಣ ನಿಮ್ಮ ಪೋಷಕರಿಗೆ ತಿಳಿಸಿ."
+                    },
+                    "hi": {
+                        "headline": "🛑 दूर रहें! खतरनाक मूवी/गेमिंग वेबसाइट",
+                        "explanation": "यह वेबसाइट (जैसे नेटमिरर) सुरक्षित नहीं है। इसमें वायरस और फर्जी ऐप्स हो सकते हैं जो आपके फोन को नुकसान पहुंचा सकते हैं।",
+                        "action": "कुछ भी डाउनलोड न करें। तुरंत अपने माता-पिता को बताएं।"
+                    }
+                },
+                "senior": {
+                    "en": {
+                        "headline": "🔴 DANGER: Unsafe Streaming & Malware Risk",
+                        "explanation": "Netmirror and similar pirated streaming mirrors are known to carry malware, deceitful popups, and fake virus warnings designed to trick you.",
+                        "action": "Do not visit this site or install any app/APK it suggests. Only use official services like YouTube, Hotstar, or Netflix."
+                    },
+                    "kn": {
+                        "headline": "🔴 ಎಚ್ಚರಿಕೆ: ವೈರಸ್ ಮತ್ತು ಮಾಲ್‌ವೇರ್ ಅಪಾಯ",
+                        "explanation": "ನೆಟ್‌ಮಿರರ್ ನಂತಹ ಅನಧಿಕೃತ ಸೈಟ್‌ಗಳು ನಿಮ್ಮ ಸಾಧನಕ್ಕೆ ವೈರಸ್ ಮತ್ತು ಮೋಸದ ಜಾಹೀರಾತುಗಳನ್ನು ತರಬಹುದು.",
+                        "action": "ಈ ವೆಬ್‌ಸೈಟ್‌ಗೆ ಹೋಗಬೇಡಿ ಅಥವಾ ಯಾವುದೇ ಆ್ಯಪ್ ಡೌನ್‌ಲೋಡ್ ಮಾಡಬೇಡಿ. ಅಧಿಕೃತ ಆ್ಯಪ್‌ಗಳನ್ನು ಮಾತ್ರ ಬಳಸಿ."
+                    },
+                    "hi": {
+                        "headline": "🔴 खतरा: असुरक्षित वेबसाइट (वायरस जोखिम)",
+                        "explanation": "नेटमिरर जैसी अनधिकृत स्ट्रीमिंग साइटें आपके डिवाइस में वायरस और भ्रामक विज्ञापन डालने के लिए जानी जाती हैं।",
+                        "action": "इस वेबसाइट पर न जाएं और कोई ऐप डाउनलोड न करें। केवल आधिकारिक ऐप्स का उपयोग करें।"
+                    }
+                },
+                "adult": {
+                    "en": {
+                        "headline": "High Risk Detected: Pirated Streaming Mirror & Adware/Trojan Vector",
+                        "explanation": "Netmirror operates as an unauthorized streaming mirror. Such platforms are heavily weaponized with malicious ad networks, browser hijackers, cryptominers, and trojan APK downloads.",
+                        "action": "Do not stream or download files/APKs from this domain. Ensure device antivirus and ad-blockers are active."
+                    },
+                    "kn": {
+                        "headline": "ಹೆಚ್ಚಿನ ಅಪಾಯ ಪತ್ತೆಯಾಗಿದೆ: ಅನಧಿಕೃತ ಸ್ಟ್ರೀಮಿಂಗ್ ಮಿರರ್ ಮತ್ತು ಮಾಲ್‌ವೇರ್ ಬೆದರಿಕೆ",
+                        "explanation": "ನೆಟ್‌ಮಿರರ್ ಅನಧಿಕೃತ ಸ್ಟ್ರೀಮಿಂಗ್ ಸೈಟ್ ಆಗಿದ್ದು, ಇದು ಮಾಲ್‌ವೇರ್, ಟ್ರೋಜನ್ ಮತ್ತು ವಂಚನೆಯ ಜಾಹೀರಾತುಗಳನ್ನು ಹರಡಲು ಹೆಸರುವಾಸಿಯಾಗಿದೆ.",
+                        "action": "ಈ ಡೊಮೇನ್‌ನಿಂದ ಯಾವುದೇ ಫೈಲ್ ಅಥವಾ ಆ್ಯಪ್ ಡೌನ್‌ಲೋಡ್ ಮಾಡಬೇಡಿ. ಅಧಿಕೃತ ತಾಣಗಳನ್ನು ಮಾತ್ರ ಬಳಸಿ."
+                    },
+                    "hi": {
+                        "headline": "उच्च जोखिम का पता चला: अनधिकृत स्ट्रीमिंग और मालवेयर ख़तरा",
+                        "explanation": "नेटमिरर जैसी साइटें पायरेटेड कंटेंट के नाम पर आपके डिवाइस में वायरस, ट्रोजन और खतरनाक विज्ञापन डालती हैं।",
+                        "action": "इस डोमेन से कोई फाइल या एपीके डाउनलोड न करें। केवल आधिकारिक सेवाओं का उपयोग करें।"
+                    }
+                },
+                "caretaker": {
+                    "en": {
+                        "headline": "High Risk: Ward Searched Unsafe Streaming Mirror (Netmirror)",
+                        "explanation": "Ward brought/inspected an unauthorized streaming mirror site frequently implicated in malware distribution, clickjacking, and trojan APK downloads.",
+                        "action": "Advise ward on the risks of pirated streaming sites and verify no unauthorized APKs were installed."
+                    },
+                    "kn": {
+                        "headline": "ಹೆಚ್ಚಿನ ಅಪಾಯ: ಕುಟುಂಬದವರು ನೆಟ್‌ಮಿರರ್ ಸೈಟ್ ಪರಿಶೀಲಿಸಿದ್ದಾರೆ",
+                        "explanation": "ಕುಟುಂಬದವರು ವೈರಸ್ ಮತ್ತು ಅಸುರಕ್ಷಿತ ಜಾಹೀರಾತುಗಳನ್ನು ಹೊಂದಿರುವ ಅನಧಿಕೃತ ಸೈಟ್ ಪರಿಶೀಲಿಸಿದ್ದಾರೆ.",
+                        "action": "ಅವರು ಯಾವುದೇ ಅಸುರಕ್ಷಿತ ಆ್ಯಪ್ ಡೌನ್‌ಲೋಡ್ ಮಾಡಿಲ್ಲವೆಂದು ಖಚಿತಪಡಿಸಿಕೊಳ್ಳಿ."
+                    },
+                    "hi": {
+                        "headline": "उच्च जोखिम: आश्रित ने असुरक्षित स्ट्रीमिंग साइट (नेटमिरर) जांची है",
+                        "explanation": "यूजर ने अनधिकृत स्ट्रीमिंग साइट की जांच की है जो मालवेयर और खतरनाक विज्ञापनों के लिए जानी जाती है।",
+                        "action": "जांचें कि डिवाइस पर कोई अनजान ऐप तो डाउनलोड नहीं हुआ है।"
+                    }
+                }
+            }
+            mode_expl = piracy_expl[mode][lang]
+        else:
+            mode_expl = EXPLANATIONS[risk_level][mode][lang]
 
         # 5. Determine primary reason
         primary_reason = mode_expl["explanation"]

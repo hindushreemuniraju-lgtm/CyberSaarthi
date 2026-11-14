@@ -13,15 +13,22 @@ export interface UserPreferences {
 }
 
 export interface User {
+  user_id: string;
   id: string;
+  full_name: string;
   name: string;
-  email?: string;
+  email: string;
+  username: string;
   phone?: string;
+  account_status?: string;
+  role: UserMode;
+  roles?: string[];
   user_mode: UserMode;
   preferred_language: Language;
   font_scale: FontScale;
   voice_enabled: boolean;
   preferences?: UserPreferences;
+  created_at?: string;
 }
 
 export interface DetectedSignal {

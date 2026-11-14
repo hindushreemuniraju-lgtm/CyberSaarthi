@@ -9,7 +9,7 @@ class ScanEvent(Base):
     __tablename__ = 'scan_events'
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(36), ForeignKey('users.id', ondelete='SET NULL'), nullable=True)
+    user_id = Column(String(36), ForeignKey('users.user_id', ondelete='SET NULL'), nullable=True)
     input_type = Column(String(20), nullable=False) # 'url', 'message', 'combined'
     input_hash = Column(String(64), nullable=False)
     input_preview = Column(String(255), nullable=True)

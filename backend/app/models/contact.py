@@ -8,7 +8,7 @@ class TrustedContact(Base):
     __tablename__ = 'trusted_contacts'
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(36), ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    user_id = Column(String(36), ForeignKey('users.user_id', ondelete='CASCADE'), nullable=False)
     name = Column(String(120), nullable=False)
     relationship = Column(String(64), nullable=False) # e.g. 'Son', 'Daughter', 'Mother', 'Friend'
     phone = Column(String(32), nullable=False)

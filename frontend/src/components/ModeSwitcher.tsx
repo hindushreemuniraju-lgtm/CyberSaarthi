@@ -1,12 +1,14 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { useUserExperience } from '../context/UserExperienceContext';
 import { useAuth } from '../context/AuthContext';
 import { UserMode } from '../types';
-import { Sparkles, Shield, HeartHandshake, UserCheck } from 'lucide-react';
+import { Sparkles, Shield, HeartHandshake, UserCheck, Lock } from 'lucide-react';
 
 export const ModeSwitcher: React.FC = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { mode, setMode } = useUserExperience();
   const { user, loginAsDemo } = useAuth();
 
@@ -38,11 +40,23 @@ export const ModeSwitcher: React.FC = () => {
   ];
 
   const handleSelectMode = async (m: UserMode) => {
-    // If not logged in, or if logged in as a demo user, switch persona seamlessly
-    if (!user || user.email?.includes('@cybersaarthi.org')) {
+    // If not logged in, or if logged in as a demo account, switch demo profile smoothly
+    const isDemoAccount = !user || user.email?.includes('@cybersaarthi.org') || user.username?.includes('_');
+    if (isDemoAccount) {
       await loginAsDemo(m);
+      await setMode(m);
+      navigate(`/${m}`);
+    } else {
+      // Real registered user with an assigned role
+      const userRole = (user.role || user.user_mode || '').toLowerCase();
+      if (userRole === m.toLowerCase()) {
+        await setMode(m);
+        navigate(`/${m}`);
+      } else {
+        // Enforce RBAC: navigate so ProtectedRoute handles access control
+        navigate(`/${m}`);
+      }
     }
-    await setMode(m);
   };
 
   return (

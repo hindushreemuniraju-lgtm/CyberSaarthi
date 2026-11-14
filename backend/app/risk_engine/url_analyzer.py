@@ -2,10 +2,11 @@ import re
 import math
 from urllib.parse import urlparse
 
-# Suspicious TLDs commonly abused for low-cost phishing
+# Suspicious TLDs commonly abused for low-cost phishing and unregulated streaming
 SUSPICIOUS_TLDS = {
     'tk', 'ml', 'ga', 'cf', 'gq', 'top', 'xyz', 'work', 'click', 'buzz',
-    'rest', 'fit', 'icu', 'cam', 'monster', 'surf', 'sbs', 'cfd', 'quest'
+    'rest', 'fit', 'icu', 'cam', 'monster', 'surf', 'sbs', 'cfd', 'quest',
+    'to', 'is', 'cc', 'ws', 'su', 'pw', 'cx', 'stream', 'club', 'download', 'vip'
 }
 
 # Known URL shorteners
@@ -35,10 +36,21 @@ TARGETED_BRANDS = {
     'airtel': ['airtel.in']
 }
 
+# Known Piracy, Illegal Streaming Mirror, and Malware/Trojan Distribution Signatures
+KNOWN_MALICIOUS_AND_PIRACY_TERMS = {
+    'netmirror', 'fmovies', '123movies', 'tamilrockers', 'movierulz', 'filmywap',
+    'ibomma', 'soap2day', 'lookmovie', 'streamlord', 'goojara', 'solarmovie',
+    '9xmovies', 'bolly4u', 'khatrimaza', 'cinemavilla', 'cineb', 'vegamovies',
+    'mp4moviez', 'skymovieshd', 'piratebay', 'kickasstorrents', '1337x', 'rarbg',
+    'modapk', 'happymod', 'apkdone', 'revdl', 'rexdl', 'an1', 'apkpure',
+    'crackz', 'warez', 'keygen', 'torrent', 'torrents'
+}
+
 SUSPICIOUS_PATH_KEYWORDS = [
     'kyc', 'pan', 'pan-card', 'verify', 'verification', 'update-account',
     'account-block', 'login-confirm', 'claim', 'reward', 'refund', 'lottery',
-    'free-recharge', 'apk', 'download-app', 'secure-login', 'ebill', 'power-cut'
+    'free-recharge', 'apk', 'download-app', 'secure-login', 'ebill', 'power-cut',
+    'netmirror', 'modapk', 'cracked', 'stream-free', 'watch-free', 'free-download'
 ]
 
 def calculate_entropy(s: str) -> float:
@@ -111,7 +123,7 @@ def analyze_url(raw_url: str) -> dict:
             "code": "SUSPICIOUS_TLD",
             "severity": 30,
             "title": "High-Risk Top-Level Domain",
-            "reason": f"Domain ends with .{tld}, a top-level domain frequently associated with spam and disposable phishing."
+            "reason": f"Domain ends with .{tld}, a top-level domain frequently associated with spam, pirated clones, and disposable phishing."
         })
         total_score += 30
 
@@ -127,7 +139,6 @@ def analyze_url(raw_url: str) -> dict:
 
     # 7. Brand Impersonation in Domain
     for brand, legit_domains in TARGETED_BRANDS.items():
-        # Match brand keyword as a standalone subdomain or part of unofficial host
         if re.search(rf'(^|\.|\-){brand}(\-|\.|$)', hostname) or (brand in hostname):
             is_legit = any(hostname == ld or hostname.endswith('.' + ld) for ld in legit_domains)
             if not is_legit:
@@ -140,7 +151,21 @@ def analyze_url(raw_url: str) -> dict:
                 total_score += 55
                 break
 
-    # 8. Suspicious Keywords in Path/Query
+    # 8. Known Pirated Streaming Mirror / Malicious Adware Vector (e.g. Netmirror, FMovies)
+    matched_piracy_term = None
+    for bad_term in KNOWN_MALICIOUS_AND_PIRACY_TERMS:
+        if bad_term in hostname or bad_term in path:
+            matched_piracy_term = bad_term
+            signals.append({
+                "code": "MALICIOUS_STREAMING_PIRACY",
+                "severity": 75,
+                "title": f"Unverified Streaming Mirror / Malware Vector ({bad_term.capitalize()})",
+                "reason": f"'{bad_term}' is a known unauthorized streaming mirror and pirated download site that routinely distributes malicious adware, browser hijackers, and trojan APKs."
+            })
+            total_score += 75
+            break
+
+    # 9. Suspicious Keywords in Path/Query
     found_keywords = [kw for kw in SUSPICIOUS_PATH_KEYWORDS if kw in path or kw in query]
     if found_keywords:
         kw_severity = min(40, len(found_keywords) * 15)
@@ -152,7 +177,7 @@ def analyze_url(raw_url: str) -> dict:
         })
         total_score += kw_severity
 
-    # 9. Non-standard ports
+    # 10. Non-standard ports
     if parsed.port and parsed.port not in [80, 443, 8080]:
         signals.append({
             "code": "NON_STANDARD_PORT",
@@ -162,7 +187,7 @@ def analyze_url(raw_url: str) -> dict:
         })
         total_score += 20
 
-    # 10. High Entropy in path/domain (randomized tokens)
+    # 11. High Entropy in path/domain (randomized tokens)
     if calculate_entropy(path) > 4.5 and len(path) > 20:
         signals.append({
             "code": "HIGH_ENTROPY_PATH",

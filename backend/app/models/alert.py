@@ -9,8 +9,8 @@ class Alert(Base):
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     scan_event_id = Column(String(36), ForeignKey('scan_events.id', ondelete='SET NULL'), nullable=True)
-    ward_id = Column(String(36), ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
-    caretaker_id = Column(String(36), ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    ward_id = Column(String(36), ForeignKey('users.user_id', ondelete='CASCADE'), nullable=False)
+    caretaker_id = Column(String(36), ForeignKey('users.user_id', ondelete='CASCADE'), nullable=False)
     severity = Column(String(20), nullable=False, default='HIGH') # 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'
     title = Column(String(191), nullable=False)
     summary = Column(Text, nullable=False)
@@ -26,7 +26,7 @@ class Alert(Base):
             "id": self.id,
             "scan_event_id": self.scan_event_id,
             "ward_id": self.ward_id,
-            "ward_name": self.ward.name if self.ward else "Ward",
+            "ward_name": self.ward.full_name if self.ward else "Ward",
             "ward_mode": self.ward.user_mode if self.ward else "unknown",
             "caretaker_id": self.caretaker_id,
             "severity": self.severity,

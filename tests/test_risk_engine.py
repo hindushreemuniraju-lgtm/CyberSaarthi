@@ -79,3 +79,20 @@ def test_decision_engine_multilingual_modes():
     adult_hi = engine.evaluate(scam, user_mode="adult", language="hi")
     assert adult_hi["risk_level"] == "BLOCK"
     assert "जोखिम" in adult_hi["headline"]
+
+def test_netmirror_piracy_malware_detection():
+    engine = DecisionEngine()
+    
+    # 1. URL test with netmirror.app
+    res_url = engine.evaluate("https://netmirror.app/movies", user_mode="adult", language="en")
+    assert res_url["risk_level"] == "BLOCK"
+    assert res_url["risk_score"] >= 70
+    assert any(s["code"] in ["MALICIOUS_STREAMING_PIRACY", "PIRACY_MALWARE_STREAMING"] for s in res_url["signals"])
+    assert "Streaming Mirror" in res_url["headline"] or "Malware" in res_url["headline"]
+
+    # 2. Keyword test with 'netmirror'
+    res_kw = engine.evaluate("is netmirror safe?", user_mode="senior", language="kn")
+    assert res_kw["risk_level"] == "BLOCK"
+    assert res_kw["risk_score"] >= 70
+    assert "ವೈರಸ್" in res_kw["headline"] or "ಅಪಾಯ" in res_kw["headline"]
+
